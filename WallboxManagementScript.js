@@ -1,3 +1,4 @@
+let webhookUrl = "https://example.com/webhook"; // Replace with your webhook URL
 let blueButton = "bthomesensor:201";
 let redButton = "bthomesensor:203";
 // Debug: Log script start
@@ -72,7 +73,7 @@ Shelly.addEventHandler(function(ev) {
 }, null);
 // Add schedule to send the yearly power usage and reset the KVS values (https://shelly-api-docs.shelly.cloud/gen2/0.14/ComponentsAndServices/Schedule#schedulecreate)
 let schedule = Shelly.call("Schedule.Create", {enable: true, timespec: "0 0 1 1 *", calls: [
-    {method: "HTTP.Request", params: {url: "https://example.com/api/powerUsage", method: "POST", body: JSON.stringify({blue: getBlueWallbox.value, red: getRedWallbox.value})}}
+    {method: "HTTP.Request", params: {url: webhookUrl, method: "POST", body: JSON.stringify({blue: getBlueWallbox.value, red: getRedWallbox.value})}}
     {method: "KVS.Set", params: {key: "powerUsageBlue", value: 0}},
     {method: "KVS.Set", params: {key: "powerUsageRed", value: 0}},
 ]

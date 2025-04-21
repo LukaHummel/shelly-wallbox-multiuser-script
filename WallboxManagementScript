@@ -1,8 +1,7 @@
 let blueButton = "bthomesensor:201";
 let redButton = "bthomesensor:203";
 // Debug: Log script start
-print("Wallbox script started");
-
+console.log("Wallbox script started");
 // Monitor Switch state changes
 Shelly.addEventHandler(function(ev) {
     if (ev.component === blueButton || ev.component === redButton) {
@@ -12,10 +11,10 @@ Shelly.addEventHandler(function(ev) {
         // Check every 900000ms (15min) if the power is still used
         let timerHandle = Timer.set(900, true, function() {
             let currentPower = Shelly.getComponentStatus("em:0").total_act_power
-            print("Current power:", currentPower); // Debug log
+            console.log("Current power:", currentPower); // Debug log
             // Check if power is still used
             if (currentPower > 10) {
-                print("Power is still used, not locking");
+                console.log("Power is still used, not locking");
             }
             else {
                 // Add handler to listen for lock event
@@ -26,7 +25,7 @@ Shelly.addEventHandler(function(ev) {
                         Timer.clear(timerHandle);
                         // Remove the handler
                         Shelly.removeEventHandler(getTimeHandler);
-                        print("Handler removed");
+                        console.log("Handler removed");
                         // Get the power usage for the time the wallbox was unlocked
                         Shelly.call("EMData.GetData", {id: 0, ts: startTime, ts_end: endTime}, function(getPowerUsage) {
                             if (getPowerUsage) {
@@ -46,27 +45,27 @@ Shelly.addEventHandler(function(ev) {
                                     Shelly.call("KVS.Get", {key: "powerUsageBlue"}, function(getBlueWallbox) {
                                         let storedPower = getBlueWallbox.value;
                                         Shelly.call("KVS.Set", { key: "powerUsageBlue", value: total + storedPower });
-                                        print("Blue wallbox unlocked, power usage:", total)
+                                        console.log("Blue wallbox unlocked, power usage:", total)
                                     });
                                 }
                                 else if (ev.component === redButton) {
                                     Shelly.call("KVS.Get", {key: "powerUsageRed"}, function(getRedWallbox) {
                                         let storedPower = getRedWallbox.value;
                                         Shelly.call("KVS.Set", { key: "powerUsageRed", value: total + storedPower });
-                                        print("Red wallbox unlocked, power usage:", total);
+                                        console.log("Red wallbox unlocked, power usage:", total);
                                     });
                                 }
                                 else {
-                                    print("Unknown button pressed");
+                                    console.log("Unknown button pressed");
                                 }
                             }
                         });
                     }
                 });
-            }
             // Lock the wallbox
             Shelly.call("Switch.Set", { id: 100, on: false });
-            print("Wallbox locked");
+            console.log("Wallbox locked");
+            }
         });
     }
 }, null);

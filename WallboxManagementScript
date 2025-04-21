@@ -1,0 +1,72 @@
+let blueButton = "bthomesensor:201";
+let redButton = "bthomesensor:203";
+// Debug: Log script start
+print("Wallbox script started");
+
+// Monitor Switch state changes
+Shelly.addEventHandler(function(ev) {
+    if (ev.component === blueButton || ev.component === redButton) {
+        let startTime = ev.now
+        // Unlock wallbox
+        Shelly.call("Switch.Set", { id: 100, on: true });
+        // Check every 900000ms (15min) if the power is still used
+        let timerHandle = Timer.set(900, true, function() {
+            let currentPower = Shelly.getComponentStatus("em:0").total_act_power
+            print("Current power:", currentPower); // Debug log
+            // Check if power is still used
+            if (currentPower > 10) {
+                print("Power is still used, not locking");
+            }
+            else {
+                // Add handler to listen for lock event
+                let getTimeHandler = Shelly.addEventHandler(function(getLockTime) {
+                    if (getLockTime.component === "switch:100" && getLockTime.info.state === false) {
+                        let endTime = getLockTime.now
+                        // Stop the timer
+                        Timer.clear(timerHandle);
+                        // Remove the handler
+                        Shelly.removeEventHandler(getTimeHandler);
+                        print("Handler removed");
+                        // Get the power usage for the time the wallbox was unlocked
+                        Shelly.call("EMData.GetData", {id: 0, ts: startTime, ts_end: endTime}, function(getPowerUsage) {
+                            if (getPowerUsage) {
+                                // Sum all values in the response
+                                let json = getPowerUsage;
+                                let total = 0;
+                                for (let i = 0; i < json.data.length; i++) {
+                                    let values = json.data[i].values;
+                                    for (let j = 0; j < values.length; j++) {
+                                        for (let k = 0; k < values[j].length; k++) {
+                                            total += values[j][k];
+                                        }
+                                    }
+                                }
+                                // Add the total to the correct KVS
+                                if (ev.component === blueButton) {
+                                    Shelly.call("KVS.Get", {key: "powerUsageBlue"}, function(getBlueWallbox) {
+                                        let storedPower = getBlueWallbox.value;
+                                        Shelly.call("KVS.Set", { key: "powerUsageBlue", value: total + storedPower });
+                                        print("Blue wallbox unlocked, power usage:", total)
+                                    });
+                                }
+                                else if (ev.component === redButton) {
+                                    Shelly.call("KVS.Get", {key: "powerUsageRed"}, function(getRedWallbox) {
+                                        let storedPower = getRedWallbox.value;
+                                        Shelly.call("KVS.Set", { key: "powerUsageRed", value: total + storedPower });
+                                        print("Red wallbox unlocked, power usage:", total);
+                                    });
+                                }
+                                else {
+                                    print("Unknown button pressed");
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            // Lock the wallbox
+            Shelly.call("Switch.Set", { id: 100, on: false });
+            print("Wallbox locked");
+        });
+    }
+}, null);

@@ -4,11 +4,12 @@ let redButton = "bthomesensor:203";
 console.log("Wallbox script started");
 // Monitor Switch state changes
 Shelly.addEventHandler(function(ev) {
+    // Unlock Wallbox if blue or red button is pressed
     if (ev.component === blueButton || ev.component === redButton) {
-        let startTime = ev.now
-        // Unlock wallbox
+        let startTime = ev.now;
         Shelly.call("Switch.Set", { id: 100, on: true });
         // Check every 900000ms (15min) if the power is still used
+        // Set to 900ms for testing purposes
         let timerHandle = Timer.set(900, true, function() {
             let currentPower = Shelly.getComponentStatus("em:0").total_act_power
             console.log("Current power:", currentPower); // Debug log

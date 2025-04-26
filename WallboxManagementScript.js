@@ -71,7 +71,7 @@ Shelly.addEventHandler(function(ev) {
         });
     }
 }, null);
-// Add schedule to send the yearly power usage and reset the KVS values (https://shelly-api-docs.shelly.cloud/gen2/0.14/ComponentsAndServices/Schedule#schedulecreate)
+// Add schedule to send the yearly power usage and reset the KVS values via seperate script (https://shelly-api-docs.shelly.cloud/gen2/0.14/ComponentsAndServices/Schedule#schedulecreate)
 let schedule = Shelly.call("Schedule.Create", {enable: true, timespec: "0 0 1 1 *", calls: [
     {"method": "Script.Start", "params": {"id": notificationScriptId}}
 ]
